@@ -58,12 +58,65 @@ public class RespParser {
                 totalBytesRead += read;
             }
 
-            in.read();
-            in.read();
+            in.read(); // \r
+            in.read(); // \n
 
             commandArgs.add(new String(bytes, StandardCharsets.UTF_8));
         }
 
         return commandArgs;
+    }
+
+    // ==========================================
+    // Serialization Helpers (Day 3 Addition)
+    // ==========================================
+
+    public static byte[] toSimpleString(String s) {
+        return ("+" + s + "\r\n").getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static byte[] toError(String message) {
+        return ("-ERR " + message + "\r\n").getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static byte[] toInteger(long value) {
+        return (":" + value + "\r\n").getBytes(StandardCharsets.US_ASCII);
+    }
+
+    public static byte[] toBulkString(String s) {
+        if (s == null) {
+            return "$-1\r\n".getBytes(StandardCharsets.US_ASCII);
+        }
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        byte[] header = ("$" + bytes.length + "\r\n").getBytes(StandardCharsets.US_ASCII);
+        byte[] result = new byte[header.length + bytes.length + 2];
+        System.arraycopy(header, 0, result, 0, header.length);
+        System.arraycopy(bytes, 0, result, header.length, bytes.length);
+        result[result.length - 2] = '\r';
+        result[result.length - 1] = '\n';
+        return result;
+    }
+
+    public static byte[] toArray(List<byte[]> serializedElements) {
+        if (serializedElements == null) {
+            return "*-1\r\n".getBytes(StandardCharsets.US_ASCII);
+        }
+        StringBuilder header = new StringBuilder("*" + serializedElements.size() + "\r\n");
+        byte[] headerBytes = header.toString().getBytes(StandardCharsets.US_ASCII);
+
+        int totalLen = headerBytes.length;
+        for (byte[] el : serializedElements) {
+            totalLen += el.length;
+        }
+
+        byte[] result = new byte[totalLen];
+        System.arraycopy(headerBytes, 0, result, 0, headerBytes.length);
+
+        int offset = headerBytes.length;
+        for (byte[] el : serializedElements) {
+            System.arraycopy(el, 0, result, offset, el.length);
+            offset += el.length;
+        }
+        return result;
     }
 }
