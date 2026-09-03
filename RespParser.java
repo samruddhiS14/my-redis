@@ -67,10 +67,6 @@ public class RespParser {
         return commandArgs;
     }
 
-    // ==========================================
-    // Serialization Helpers (Day 3 Addition)
-    // ==========================================
-
     public static byte[] toSimpleString(String s) {
         return ("+" + s + "\r\n").getBytes(StandardCharsets.UTF_8);
     }
