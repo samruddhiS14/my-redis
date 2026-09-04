@@ -10,7 +10,7 @@ A lightweight, from-scratch implementation of a Redis server in Java (Java 21+).
 - [x] **Day 2**: RESP Protocol Parser (Array & Bulk String decoding)
 - [x] **Day 3**: RESP Serializer & Basic Commands (`PING`, `ECHO`)
 - [x] **Day 4**: Core In-Memory Key-Value Store (`GET`, `SET`)
-- [ ] **Day 5**: Numeric Operations & Multi-Key (`INCR`, `DECR`, `MGET`, `MSET`)
+- [x] **Day 5**: Numeric Operations & Multi-Key (`INCR`, `DECR`, `MGET`, `MSET`)
 - [ ] **Day 6**: Hashes (`HSET`, `HGET`, `HGETALL`, `HDEL`)
 - [ ] **Day 7**: Lists (`LPUSH`, `RPUSH`, `LPOP`, `RPOP`, `LRANGE`)
 - [ ] **Day 8**: Sets (`SADD`, `SMEMBERS`, `SISMEMBER`)
