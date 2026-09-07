@@ -58,8 +58,8 @@ public class RespParser {
                 totalBytesRead += read;
             }
 
-            in.read(); // \r
-            in.read(); // \n
+            in.read();
+            in.read();
 
             commandArgs.add(new String(bytes, StandardCharsets.UTF_8));
         }

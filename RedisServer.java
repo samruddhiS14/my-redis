@@ -76,8 +76,6 @@ public class RedisServer {
                 }
                 return RespParser.toBulkString(engine.get(args.get(1)));
 
-            // --- Day 5 Additions ---
-
             case "INCR":
                 if (args.size() != 2) {
                     return RespParser.toError("wrong number of arguments for 'incr' command");
@@ -131,7 +129,6 @@ public class RedisServer {
                 return RespParser.toInteger(engine.strLen(args.get(1)));
 
             case "MSET":
-                // Must have pairs: MSET key1 val1 key2 val2 -> odd total arguments
                 if (args.size() < 3 || (args.size() - 1) % 2 != 0) {
                     return RespParser.toError("wrong number of arguments for 'mset' command");
                 }
