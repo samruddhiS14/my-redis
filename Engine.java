@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -7,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Engine {
     private final ConcurrentHashMap<String, String> stringStore = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, ConcurrentHashMap<String, String>> hashStore = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, LinkedList<String>> listStore = new ConcurrentHashMap<>();
 
     public void set(String key, String value) {
         stringStore.put(key, value);
@@ -109,5 +111,84 @@ public class Engine {
     public int hlen(String key) {
         ConcurrentHashMap<String, String> hash = hashStore.get(key);
         return hash == null ? 0 : hash.size();
+    }
+
+    public int lpush(String key, List<String> values) {
+        LinkedList<String> list = listStore.computeIfAbsent(key, k -> new LinkedList<>());
+        synchronized (list) {
+            for (String val : values) {
+                list.addFirst(val);
+            }
+            return list.size();
+        }
+    }
+
+    public int rpush(String key, List<String> values) {
+        LinkedList<String> list = listStore.computeIfAbsent(key, k -> new LinkedList<>());
+        synchronized (list) {
+            for (String val : values) {
+                list.addLast(val);
+            }
+            return list.size();
+        }
+    }
+
+    public String lpop(String key) {
+        LinkedList<String> list = listStore.get(key);
+        if (list == null) return null;
+        synchronized (list) {
+            if (list.isEmpty()) return null;
+            String val = list.removeFirst();
+            if (list.isEmpty()) {
+                listStore.remove(key, list);
+            }
+            return val;
+        }
+    }
+
+    public String rpop(String key) {
+        LinkedList<String> list = listStore.get(key);
+        if (list == null) return null;
+        synchronized (list) {
+            if (list.isEmpty()) return null;
+            String val = list.removeLast();
+            if (list.isEmpty()) {
+                listStore.remove(key, list);
+            }
+            return val;
+        }
+    }
+
+    public int llen(String key) {
+        LinkedList<String> list = listStore.get(key);
+        if (list == null) return 0;
+        synchronized (list) {
+            return list.size();
+        }
+    }
+
+    public List<String> lrange(String key, int start, int stop) {
+        LinkedList<String> list = listStore.get(key);
+        if (list == null) return Collections.emptyList();
+
+        synchronized (list) {
+            int size = list.size();
+            if (size == 0) return Collections.emptyList();
+
+            if (start < 0) start = size + start;
+            if (stop < 0) stop = size + stop;
+
+            if (start < 0) start = 0;
+            if (start >= size || start > stop) {
+                return Collections.emptyList();
+            }
+            if (stop >= size) stop = size - 1;
+
+            List<String> result = new ArrayList<>(stop - start + 1);
+            for (int i = start; i <= stop; i++) {
+                result.add(list.get(i));
+            }
+            return result;
+        }
     }
 }
