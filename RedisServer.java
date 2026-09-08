@@ -153,6 +153,57 @@ public class RedisServer {
                 }
                 return RespParser.toArray(serializedValues);
 
+            case "HSET":
+                if (args.size() < 4 || (args.size() - 2) % 2 != 0) {
+                    return RespParser.toError("wrong number of arguments for 'hset' command");
+                }
+                String hsetKey = args.get(1);
+                List<String> fields = new ArrayList<>();
+                List<String> vals = new ArrayList<>();
+                for (int i = 2; i < args.size(); i += 2) {
+                    fields.add(args.get(i));
+                    vals.add(args.get(i + 1));
+                }
+                int added = engine.hset(hsetKey, fields, vals);
+                return RespParser.toInteger(added);
+
+            case "HGET":
+                if (args.size() != 3) {
+                    return RespParser.toError("wrong number of arguments for 'hget' command");
+                }
+                return RespParser.toBulkString(engine.hget(args.get(1), args.get(2)));
+
+            case "HGETALL":
+                if (args.size() != 2) {
+                    return RespParser.toError("wrong number of arguments for 'hgetall' command");
+                }
+                List<String> allEntries = engine.hgetall(args.get(1));
+                List<byte[]> serializedHash = new ArrayList<>(allEntries.size());
+                for (String item : allEntries) {
+                    serializedHash.add(RespParser.toBulkString(item));
+                }
+                return RespParser.toArray(serializedHash);
+
+            case "HDEL":
+                if (args.size() < 3) {
+                    return RespParser.toError("wrong number of arguments for 'hdel' command");
+                }
+                String hdelKey = args.get(1);
+                List<String> delFields = args.subList(2, args.size());
+                return RespParser.toInteger(engine.hdel(hdelKey, delFields));
+
+            case "HEXISTS":
+                if (args.size() != 3) {
+                    return RespParser.toError("wrong number of arguments for 'hexists' command");
+                }
+                return RespParser.toInteger(engine.hexists(args.get(1), args.get(2)));
+
+            case "HLEN":
+                if (args.size() != 2) {
+                    return RespParser.toError("wrong number of arguments for 'hlen' command");
+                }
+                return RespParser.toInteger(engine.hlen(args.get(1)));
+
             default:
                 return RespParser.toError("unknown command '" + command + "'");
         }
