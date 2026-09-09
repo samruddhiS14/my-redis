@@ -251,6 +251,41 @@ public class RedisServer {
                     return RespParser.toError("value is not an integer or out of range");
                 }
 
+            case "SADD":
+                if (args.size() < 3) {
+                    return RespParser.toError("wrong number of arguments for 'sadd' command");
+                }
+                return RespParser.toInteger(engine.sadd(args.get(1), args.subList(2, args.size())));
+
+            case "SMEMBERS":
+                if (args.size() != 2) {
+                    return RespParser.toError("wrong number of arguments for 'smembers' command");
+                }
+                List<String> members = engine.smembers(args.get(1));
+                List<byte[]> serializedMembers = new ArrayList<>(members.size());
+                for (String member : members) {
+                    serializedMembers.add(RespParser.toBulkString(member));
+                }
+                return RespParser.toArray(serializedMembers);
+
+            case "SISMEMBER":
+                if (args.size() != 3) {
+                    return RespParser.toError("wrong number of arguments for 'sismember' command");
+                }
+                return RespParser.toInteger(engine.sismember(args.get(1), args.get(2)));
+
+            case "SREM":
+                if (args.size() < 3) {
+                    return RespParser.toError("wrong number of arguments for 'srem' command");
+                }
+                return RespParser.toInteger(engine.srem(args.get(1), args.subList(2, args.size())));
+
+            case "SCARD":
+                if (args.size() != 2) {
+                    return RespParser.toError("wrong number of arguments for 'scard' command");
+                }
+                return RespParser.toInteger(engine.scard(args.get(1)));
+
             default:
                 return RespParser.toError("unknown command '" + command + "'");
         }

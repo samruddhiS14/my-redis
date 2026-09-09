@@ -3,12 +3,14 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Engine {
     private final ConcurrentHashMap<String, String> stringStore = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, ConcurrentHashMap<String, String>> hashStore = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, LinkedList<String>> listStore = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<String>> setStore = new ConcurrentHashMap<>();
 
     public void set(String key, String value) {
         stringStore.put(key, value);
@@ -190,5 +192,53 @@ public class Engine {
             }
             return result;
         }
+    }
+
+    public int sadd(String key, List<String> members) {
+        Set<String> set = setStore.computeIfAbsent(key, k -> ConcurrentHashMap.newKeySet());
+        int addedCount = 0;
+        for (String member : members) {
+            if (set.add(member)) {
+                addedCount++;
+            }
+        }
+        return addedCount;
+    }
+
+    public List<String> smembers(String key) {
+        Set<String> set = setStore.get(key);
+        if (set == null || set.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return new ArrayList<>(set);
+    }
+
+    public int sismember(String key, String member) {
+        Set<String> set = setStore.get(key);
+        if (set == null) return 0;
+        return set.contains(member) ? 1 : 0;
+    }
+
+    public int srem(String key, List<String> members) {
+        Set<String> set = setStore.get(key);
+        if (set == null) return 0;
+
+        int removedCount = 0;
+        for (String member : members) {
+            if (set.remove(member)) {
+                removedCount++;
+            }
+        }
+
+        if (set.isEmpty()) {
+            setStore.remove(key, set);
+        }
+
+        return removedCount;
+    }
+
+    public int scard(String key) {
+        Set<String> set = setStore.get(key);
+        return set == null ? 0 : set.size();
     }
 }
