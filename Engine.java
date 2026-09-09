@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -240,5 +241,62 @@ public class Engine {
     public int scard(String key) {
         Set<String> set = setStore.get(key);
         return set == null ? 0 : set.size();
+    }
+
+    public String type(String key) {
+        if (stringStore.containsKey(key)) return "string";
+        if (hashStore.containsKey(key)) return "hash";
+        if (listStore.containsKey(key)) return "list";
+        if (setStore.containsKey(key)) return "set";
+        return "none";
+    }
+
+    public int exists(List<String> keys) {
+        int count = 0;
+        for (String key : keys) {
+            if (stringStore.containsKey(key) ||
+                hashStore.containsKey(key) ||
+                listStore.containsKey(key) ||
+                setStore.containsKey(key)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public int del(List<String> keys) {
+        int removedCount = 0;
+        for (String key : keys) {
+            boolean removed = false;
+            if (stringStore.remove(key) != null) removed = true;
+            if (hashStore.remove(key) != null) removed = true;
+            if (listStore.remove(key) != null) removed = true;
+            if (setStore.remove(key) != null) removed = true;
+
+            if (removed) {
+                removedCount++;
+            }
+        }
+        return removedCount;
+    }
+
+    public List<String> keys(String pattern) {
+        Set<String> allKeys = new HashSet<>();
+        allKeys.addAll(stringStore.keySet());
+        allKeys.addAll(hashStore.keySet());
+        allKeys.addAll(listStore.keySet());
+        allKeys.addAll(setStore.keySet());
+
+        if ("*".equals(pattern)) {
+            return new ArrayList<>(allKeys);
+        }
+
+        List<String> matched = new ArrayList<>();
+        for (String k : allKeys) {
+            if (k.equals(pattern)) {
+                matched.add(k);
+            }
+        }
+        return matched;
     }
 }

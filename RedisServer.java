@@ -286,6 +286,35 @@ public class RedisServer {
                 }
                 return RespParser.toInteger(engine.scard(args.get(1)));
 
+            case "TYPE":
+                if (args.size() != 2) {
+                    return RespParser.toError("wrong number of arguments for 'type' command");
+                }
+                return RespParser.toSimpleString(engine.type(args.get(1)));
+
+            case "EXISTS":
+                if (args.size() < 2) {
+                    return RespParser.toError("wrong number of arguments for 'exists' command");
+                }
+                return RespParser.toInteger(engine.exists(args.subList(1, args.size())));
+
+            case "DEL":
+                if (args.size() < 2) {
+                    return RespParser.toError("wrong number of arguments for 'del' command");
+                }
+                return RespParser.toInteger(engine.del(args.subList(1, args.size())));
+
+            case "KEYS":
+                if (args.size() != 2) {
+                    return RespParser.toError("wrong number of arguments for 'keys' command");
+                }
+                List<String> matchedKeys = engine.keys(args.get(1));
+                List<byte[]> serializedKeys = new ArrayList<>(matchedKeys.size());
+                for (String k : matchedKeys) {
+                    serializedKeys.add(RespParser.toBulkString(k));
+                }
+                return RespParser.toArray(serializedKeys);
+
             default:
                 return RespParser.toError("unknown command '" + command + "'");
         }
