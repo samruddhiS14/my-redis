@@ -13,7 +13,7 @@ A lightweight, from-scratch implementation of a Redis server in Java (Java 21+).
 - [x] **Day 5**: Numeric Operations & Multi-Key (`INCR`, `DECR`, `MGET`, `MSET`)
 - [x] **Day 6**: Hashes (`HSET`, `HGET`, `HGETALL`, `HDEL`)
 - [x] **Day 7**: Lists (`LPUSH`, `RPUSH`, `LPOP`, `RPOP`, `LRANGE`)
-- [ ] **Day 8**: Sets (`SADD`, `SMEMBERS`, `SISMEMBER`)
+- [x] **Day 8**: Sets (`SADD`, `SMEMBERS`, `SISMEMBER`)
 - [ ] **Day 9**: Universal Key Management (`DEL`, `EXISTS`, `TYPE`, `KEYS`)
 - [ ] **Day 10**: Expiration Engine (Passive & Active background TTL cleanup)
 - [ ] **Day 11**: Non-Blocking I/O Event Loop (`java.nio` Selector)
