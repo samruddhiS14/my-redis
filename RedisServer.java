@@ -315,6 +315,46 @@ public class RedisServer {
                 }
                 return RespParser.toArray(serializedKeys);
 
+            case "EXPIRE":
+                if (args.size() != 3) {
+                    return RespParser.toError("wrong number of arguments for 'expire' command");
+                }
+                try {
+                    long sec = Long.parseLong(args.get(2));
+                    return RespParser.toInteger(engine.expire(args.get(1), sec));
+                } catch (NumberFormatException e) {
+                    return RespParser.toError("value is not an integer or out of range");
+                }
+
+            case "PEXPIRE":
+                if (args.size() != 3) {
+                    return RespParser.toError("wrong number of arguments for 'pexpire' command");
+                }
+                try {
+                    long ms = Long.parseLong(args.get(2));
+                    return RespParser.toInteger(engine.pexpire(args.get(1), ms));
+                } catch (NumberFormatException e) {
+                    return RespParser.toError("value is not an integer or out of range");
+                }
+
+            case "TTL":
+                if (args.size() != 2) {
+                    return RespParser.toError("wrong number of arguments for 'ttl' command");
+                }
+                return RespParser.toInteger(engine.ttl(args.get(1)));
+
+            case "PTTL":
+                if (args.size() != 2) {
+                    return RespParser.toError("wrong number of arguments for 'pttl' command");
+                }
+                return RespParser.toInteger(engine.pttl(args.get(1)));
+
+            case "PERSIST":
+                if (args.size() != 2) {
+                    return RespParser.toError("wrong number of arguments for 'persist' command");
+                }
+                return RespParser.toInteger(engine.persist(args.get(1)));
+
             default:
                 return RespParser.toError("unknown command '" + command + "'");
         }
