@@ -1,5 +1,7 @@
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +62,75 @@ public class RespParser {
 
             in.read();
             in.read();
+
+            commandArgs.add(new String(bytes, StandardCharsets.UTF_8));
+        }
+
+        return commandArgs;
+    }
+
+    private static String readBufferLine(ByteBuffer buffer) {
+        int initialPos = buffer.position();
+        int limit = buffer.limit();
+
+        for (int i = initialPos; i < limit - 1; i++) {
+            if (buffer.get(i) == '\r' && buffer.get(i + 1) == '\n') {
+                byte[] lineBytes = new byte[i - initialPos];
+                buffer.get(lineBytes);
+                buffer.get();
+                buffer.get();
+                return new String(lineBytes, StandardCharsets.UTF_8);
+            }
+        }
+        return null;
+    }
+
+    public static List<String> parseBufferCommand(ByteBuffer buffer) {
+        buffer.mark();
+        String line = readBufferLine(buffer);
+        if (line == null) {
+            buffer.reset();
+            return null;
+        }
+
+        if (!line.startsWith("*")) {
+            return List.of(line.trim().split("\\s+"));
+        }
+
+        int numElements;
+        try {
+            numElements = Integer.parseInt(line.substring(1).trim());
+        } catch (NumberFormatException e) {
+            buffer.reset();
+            return null;
+        }
+
+        List<String> commandArgs = new ArrayList<>(numElements);
+
+        for (int i = 0; i < numElements; i++) {
+            String lengthLine = readBufferLine(buffer);
+            if (lengthLine == null || !lengthLine.startsWith("$")) {
+                buffer.reset();
+                return null;
+            }
+
+            int length;
+            try {
+                length = Integer.parseInt(lengthLine.substring(1).trim());
+            } catch (NumberFormatException e) {
+                buffer.reset();
+                return null;
+            }
+
+            if (buffer.remaining() < length + 2) {
+                buffer.reset();
+                return null;
+            }
+
+            byte[] bytes = new byte[length];
+            buffer.get(bytes);
+            buffer.get();
+            buffer.get();
 
             commandArgs.add(new String(bytes, StandardCharsets.UTF_8));
         }

@@ -1,9 +1,12 @@
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class RedisServer {
@@ -11,39 +14,86 @@ public class RedisServer {
     private static final Engine engine = new Engine();
 
     public static void main(String[] args) {
-        System.out.println("Starting Redis Server on port " + PORT + "...");
+        System.out.println("Starting Redis Server (NIO Event Loop) on port " + PORT + "...");
 
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            serverSocket.setReuseAddress(true);
+        try (ServerSocketChannel serverChannel = ServerSocketChannel.open();
+             Selector selector = Selector.open()) {
+
+            serverChannel.bind(new InetSocketAddress(PORT));
+            serverChannel.configureBlocking(false);
+            serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+
             System.out.println("Server listening and ready for connections on port " + PORT);
 
             while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("New client connected: " + clientSocket.getRemoteSocketAddress());
-                Thread.ofVirtual().start(() -> handleClient(clientSocket));
+                selector.select();
+                Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
+
+                while (keyIterator.hasNext()) {
+                    SelectionKey key = keyIterator.next();
+                    keyIterator.remove();
+
+                    if (!key.isValid()) {
+                        continue;
+                    }
+
+                    if (key.isAcceptable()) {
+                        acceptClient(serverChannel, selector);
+                    } else if (key.isReadable()) {
+                        readClient(key);
+                    }
+                }
             }
         } catch (IOException e) {
             System.err.println("Server exception: " + e.getMessage());
         }
     }
 
-    private static void handleClient(Socket socket) {
-        try (socket;
-             InputStream in = socket.getInputStream();
-             OutputStream out = socket.getOutputStream()) {
+    private static void acceptClient(ServerSocketChannel serverChannel, Selector selector) throws IOException {
+        SocketChannel clientChannel = serverChannel.accept();
+        if (clientChannel != null) {
+            clientChannel.configureBlocking(false);
+            ByteBuffer readBuffer = ByteBuffer.allocate(8192);
+            clientChannel.register(selector, SelectionKey.OP_READ, readBuffer);
+            System.out.println("New client connected: " + clientChannel.getRemoteAddress());
+        }
+    }
+
+    private static void readClient(SelectionKey key) {
+        SocketChannel clientChannel = (SocketChannel) key.channel();
+        ByteBuffer buffer = (ByteBuffer) key.attachment();
+
+        try {
+            int bytesRead = clientChannel.read(buffer);
+            if (bytesRead == -1) {
+                closeConnection(key, clientChannel);
+                return;
+            }
+
+            buffer.flip();
 
             while (true) {
-                List<String> commandArgs = RespParser.parseCommand(in);
-                if (commandArgs == null || commandArgs.isEmpty()) {
+                List<String> commandArgs = RespParser.parseBufferCommand(buffer);
+                if (commandArgs == null) {
                     break;
                 }
 
                 byte[] response = dispatchCommand(commandArgs);
-                out.write(response);
-                out.flush();
+                clientChannel.write(ByteBuffer.wrap(response));
             }
+
+            buffer.compact();
         } catch (IOException e) {
-            System.out.println("Client disconnected: " + socket.getRemoteSocketAddress());
+            closeConnection(key, clientChannel);
+        }
+    }
+
+    private static void closeConnection(SelectionKey key, SocketChannel channel) {
+        try {
+            System.out.println("Client disconnected: " + channel.getRemoteAddress());
+            key.cancel();
+            channel.close();
+        } catch (IOException ignored) {
         }
     }
 
