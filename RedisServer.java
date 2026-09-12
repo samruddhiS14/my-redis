@@ -12,9 +12,17 @@ import java.util.List;
 public class RedisServer {
     private static final int PORT = 6379;
     private static final Engine engine = new Engine();
+    private static Aof aof;
 
     public static void main(String[] args) {
-        System.out.println("Starting Redis Server (NIO Event Loop) on port " + PORT + "...");
+        System.out.println("Starting Redis Server (NIO + AOF Writer) on port " + PORT + "...");
+
+        try {
+            aof = new Aof();
+        } catch (IOException e) {
+            System.err.println("Failed to initialize AOF: " + e.getMessage());
+            return;
+        }
 
         try (ServerSocketChannel serverChannel = ServerSocketChannel.open();
              Selector selector = Selector.open()) {
@@ -79,6 +87,7 @@ public class RedisServer {
                 }
 
                 byte[] response = dispatchCommand(commandArgs);
+                aof.writeCommand(commandArgs);
                 clientChannel.write(ByteBuffer.wrap(response));
             }
 
