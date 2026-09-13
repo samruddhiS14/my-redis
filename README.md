@@ -16,9 +16,9 @@ A lightweight, from-scratch implementation of a Redis server in Java (Java 21+).
 - [x] **Day 8**: Sets (`SADD`, `SMEMBERS`, `SISMEMBER`)
 - [x] **Day 9**: Universal Key Management (`DEL`, `EXISTS`, `TYPE`, `KEYS`)
 - [x] **Day 10**: Expiration Engine (Passive & Active background TTL cleanup)
-- [ ] **Day 11**: Non-Blocking I/O Event Loop (`java.nio` Selector)
-- [ ] **Day 12**: Append-Only File (AOF) Persistence Writer
-- [ ] **Day 13**: AOF Recovery Engine (Replaying logs on startup)
+- [x] **Day 11**: Non-Blocking I/O Event Loop (`java.nio` Selector)
+- [x] **Day 12**: Append-Only File (AOF) Persistence Writer
+- [x] **Day 13**: AOF Recovery Engine (Replaying logs on startup)
 - [ ] **Day 14**: Atomic Transactions (`MULTI`, `EXEC`, `DISCARD`)
 - [ ] **Day 15**: Stress Testing & `redis-benchmark` Hardening
 
