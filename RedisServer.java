@@ -15,7 +15,9 @@ public class RedisServer {
     private static Aof aof;
 
     public static void main(String[] args) {
-        System.out.println("Starting Redis Server (NIO + AOF Writer) on port " + PORT + "...");
+        System.out.println("Initializing Redis Server on port " + PORT + "...");
+
+        loadAof();
 
         try {
             aof = new Aof();
@@ -54,6 +56,21 @@ public class RedisServer {
             }
         } catch (IOException e) {
             System.err.println("Server exception: " + e.getMessage());
+        }
+    }
+
+    private static void loadAof() {
+        try {
+            List<List<String>> commands = Aof.readCommands();
+            if (!commands.isEmpty()) {
+                System.out.println("Loading AOF file: replaying " + commands.size() + " commands...");
+                for (List<String> cmd : commands) {
+                    dispatchCommand(cmd);
+                }
+                System.out.println("AOF loaded successfully. State restored.");
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading AOF during boot: " + e.getMessage());
         }
     }
 

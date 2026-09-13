@@ -1,6 +1,9 @@
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -18,6 +21,25 @@ public class Aof {
 
     public Aof() throws IOException {
         this.fos = new FileOutputStream(AOF_FILE, true);
+    }
+
+    public static List<List<String>> readCommands() throws IOException {
+        File file = new File(AOF_FILE);
+        if (!file.exists() || file.length() == 0) {
+            return List.of();
+        }
+
+        List<List<String>> commands = new ArrayList<>();
+        try (FileInputStream fis = new FileInputStream(file)) {
+            while (true) {
+                List<String> cmd = RespParser.parseCommand(fis);
+                if (cmd == null || cmd.isEmpty()) {
+                    break;
+                }
+                commands.add(cmd);
+            }
+        }
+        return commands;
     }
 
     public synchronized void writeCommand(List<String> commandArgs) {
