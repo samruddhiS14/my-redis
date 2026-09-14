@@ -14,6 +14,12 @@ public class RedisServer {
     private static final Engine engine = new Engine();
     private static Aof aof;
 
+    private static class ClientSession {
+        ByteBuffer buffer = ByteBuffer.allocate(8192);
+        boolean inTransaction = false;
+        List<List<String>> queue = new ArrayList<>();
+    }
+
     public static void main(String[] args) {
         System.out.println("Initializing Redis Server on port " + PORT + "...");
 
@@ -78,40 +84,87 @@ public class RedisServer {
         SocketChannel clientChannel = serverChannel.accept();
         if (clientChannel != null) {
             clientChannel.configureBlocking(false);
-            ByteBuffer readBuffer = ByteBuffer.allocate(8192);
-            clientChannel.register(selector, SelectionKey.OP_READ, readBuffer);
+            ClientSession session = new ClientSession();
+            clientChannel.register(selector, SelectionKey.OP_READ, session);
             System.out.println("New client connected: " + clientChannel.getRemoteAddress());
         }
     }
 
     private static void readClient(SelectionKey key) {
         SocketChannel clientChannel = (SocketChannel) key.channel();
-        ByteBuffer buffer = (ByteBuffer) key.attachment();
+        ClientSession session = (ClientSession) key.attachment();
 
         try {
-            int bytesRead = clientChannel.read(buffer);
+            int bytesRead = clientChannel.read(session.buffer);
             if (bytesRead == -1) {
                 closeConnection(key, clientChannel);
                 return;
             }
 
-            buffer.flip();
+            session.buffer.flip();
 
             while (true) {
-                List<String> commandArgs = RespParser.parseBufferCommand(buffer);
+                List<String> commandArgs = RespParser.parseBufferCommand(session.buffer);
                 if (commandArgs == null) {
                     break;
                 }
 
-                byte[] response = dispatchCommand(commandArgs);
-                aof.writeCommand(commandArgs);
+                byte[] response = handleCommandWithTransaction(session, commandArgs);
                 clientChannel.write(ByteBuffer.wrap(response));
             }
 
-            buffer.compact();
+            session.buffer.compact();
         } catch (IOException e) {
             closeConnection(key, clientChannel);
         }
+    }
+
+    private static byte[] handleCommandWithTransaction(ClientSession session, List<String> commandArgs) {
+        String cmd = commandArgs.get(0).toUpperCase();
+
+        if ("MULTI".equals(cmd)) {
+            if (session.inTransaction) {
+                return RespParser.toError("MULTI calls can not be nested");
+            }
+            session.inTransaction = true;
+            session.queue.clear();
+            return RespParser.toSimpleString("OK");
+        }
+
+        if ("DISCARD".equals(cmd)) {
+            if (!session.inTransaction) {
+                return RespParser.toError("DISCARD without MULTI");
+            }
+            session.inTransaction = false;
+            session.queue.clear();
+            return RespParser.toSimpleString("OK");
+        }
+
+        if ("EXEC".equals(cmd)) {
+            if (!session.inTransaction) {
+                return RespParser.toError("EXEC without MULTI");
+            }
+            session.inTransaction = false;
+            List<byte[]> results = new ArrayList<>(session.queue.size());
+
+            for (List<String> queuedArgs : session.queue) {
+                byte[] res = dispatchCommand(queuedArgs);
+                aof.writeCommand(queuedArgs);
+                results.add(res);
+            }
+
+            session.queue.clear();
+            return RespParser.toArray(results);
+        }
+
+        if (session.inTransaction) {
+            session.queue.add(commandArgs);
+            return RespParser.toSimpleString("QUEUED");
+        }
+
+        byte[] response = dispatchCommand(commandArgs);
+        aof.writeCommand(commandArgs);
+        return response;
     }
 
     private static void closeConnection(SelectionKey key, SocketChannel channel) {
