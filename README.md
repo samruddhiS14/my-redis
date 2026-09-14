@@ -19,8 +19,8 @@ A lightweight, from-scratch implementation of a Redis server in Java (Java 21+).
 - [x] **Day 11**: Non-Blocking I/O Event Loop (`java.nio` Selector)
 - [x] **Day 12**: Append-Only File (AOF) Persistence Writer
 - [x] **Day 13**: AOF Recovery Engine (Replaying logs on startup)
-- [ ] **Day 14**: Atomic Transactions (`MULTI`, `EXEC`, `DISCARD`)
-- [ ] **Day 15**: Stress Testing & `redis-benchmark` Hardening
+- [x] **Day 14**: Atomic Transactions (`MULTI`, `EXEC`, `DISCARD`)
+- [x] **Day 15**: Stress Testing & `redis-benchmark` Hardening
 
 ---
 
