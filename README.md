@@ -1,10 +1,10 @@
-# Mini-Redis in Java ⚡
+# Mini-Redis in Java 
 
 A high-performance, from-scratch implementation of a Redis-compatible in-memory database built in Java (JDK 21+). Designed step-by-step over a 15-day systems engineering sprint covering custom binary/wire protocols, non-blocking I/O multiplexing, persistence, and atomic transactions.
 
 ---
 
-## 🚀 Features
+##  Features
 
 - **RESP (REdis Serialization Protocol) Engine**: Full recursive parser and serializer supporting Simple Strings, Errors, Integers, Bulk Strings, Nulls, and Arrays.
 - **Data Structures**:
@@ -45,7 +45,7 @@ A high-performance, from-scratch implementation of a Redis-compatible in-memory 
 
 ---
 
-## 🛠️ Build & Run
+##  Build & Run
 
 ### Prerequisites
 - JDK 21+
